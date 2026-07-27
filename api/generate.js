@@ -26,14 +26,14 @@ const GEMINI_ENDPOINT = (model) =>
 const SYSTEM_PROMPT = `당신은 요리 재료를 정리해주는 어시스턴트입니다.
 다음 두 가지 입력이 주어집니다.
 1) 레시피를 설명하는 유튜브 영상
-2) 사용자가 현재 가지고 있는 재료들이 찍힌 사진
+2) 사용자가 현재 가지고 있는 재료들이 찍힌 사진 한 장 이상 (냉장고, 팬트리, 장바구니 등 서로 다른 장소를 찍은 여러 장일 수 있습니다)
 
 작업:
 - 영상을 보고 레시피 이름과 필요한 재료 목록(분량 포함, 분량을 알 수 없으면 빈 문자열)을 추출하세요.
-- 사진을 보고 사용자가 실제로 소유한 재료 목록을 추출하세요.
+- 제공된 모든 사진을 함께 보고, 사진들에 걸쳐 등장하는 재료를 합쳐서 사용자가 실제로 소유한 재료 목록을 추출하세요. 같은 재료가 여러 사진에 나오면 한 번만 표시하세요.
 - 필요한 재료 중, 사진 속 재료와 같거나 사실상 동일한 재료(예: "대파"와 "파", "다진 마늘"과 "마늘")는 "보유 재료"로 매칭하세요.
 - 매칭되지 않는 필요 재료는 "구매 필요 재료"로 분류하세요. 이때 분량도 함께 제공하세요.
-- 소금, 후추, 식용유처럼 사진에 없어도 일반적으로 집에 있을 법한 조미료라도, 사진에서 실제로 보이지 않으면 반드시 "구매 필요 재료"로 분류하세요. 임의로 있다고 가정하지 마세요.
+- 소금, 후추, 식용유처럼 사진에 없어도 일반적으로 집에 있을 법한 조미료라도, 사진들 어디에서도 실제로 보이지 않으면 반드시 "구매 필요 재료"로 분류하세요. 임의로 있다고 가정하지 마세요.
 
 아래 JSON 스키마 형식으로만 응답하세요. 다른 설명, 마크다운, 코드펜스(백틱) 없이 순수 JSON 객체만 출력하세요:
 {
@@ -60,7 +60,7 @@ module.exports = async function handler(req, res) {
   if (typeof body === 'string') {
     try { body = JSON.parse(body); } catch { body = {}; }
   }
-  const { youtubeUrl, imageBase64, mimeType } = body || {};
+  const { youtubeUrl, images, imageBase64, mimeType } = body || {};
 
   if (!youtubeUrl || typeof youtubeUrl !== 'string') {
     return res.status(400).json({ error: 'youtubeUrl 값이 필요합니다.' });
@@ -70,11 +70,35 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: '올바른 유튜브 URL이 아닙니다.' });
   }
 
-  if (!imageBase64 || typeof imageBase64 !== 'string') {
-    return res.status(400).json({ error: '재료 사진(imageBase64)이 필요합니다.' });
+  // Accept either the new multi-image `images: [{ mimeType, data }]` shape,
+  // or the older single-image `imageBase64` + `mimeType` shape for backward
+  // compatibility.
+  let imageList = [];
+  if (Array.isArray(images) && images.length > 0) {
+    imageList = images
+      .filter((img) => img && typeof img.data === 'string')
+      .map((img) => ({ mimeType: img.mimeType || 'image/jpeg', data: img.data }));
+  } else if (imageBase64 && typeof imageBase64 === 'string') {
+    imageList = [{ mimeType: mimeType || 'image/jpeg', data: imageBase64 }];
+  }
+
+  if (imageList.length === 0) {
+    return res.status(400).json({ error: '재료 사진이 최소 한 장 필요합니다.' });
+  }
+
+  const MAX_IMAGES = 8;
+  if (imageList.length > MAX_IMAGES) {
+    return res.status(400).json({ error: `사진은 최대 ${MAX_IMAGES}장까지 지원합니다.` });
   }
 
   const model = DEFAULT_MODEL;
+
+  const imageParts = imageList.map((img) => ({
+    inline_data: {
+      mime_type: img.mimeType,
+      data: img.data
+    }
+  }));
 
   const requestPayload = {
     contents: [
@@ -88,12 +112,8 @@ module.exports = async function handler(req, res) {
               mime_type: 'video/*'
             }
           },
-          {
-            inline_data: {
-              mime_type: mimeType || 'image/jpeg',
-              data: imageBase64
-            }
-          },
+          { text: `아래는 사용자가 보유한 재료 사진 ${imageList.length}장입니다.` },
+          ...imageParts,
           { text: '위 스키마에 맞는 JSON만 출력하세요.' }
         ]
       }
