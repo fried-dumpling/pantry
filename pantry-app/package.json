@@ -1,0 +1,9 @@
+{
+  "name": "recipe-ingredient-receipt",
+  "version": "1.0.0",
+  "private": true,
+  "description": "유튜브 레시피 영상 + 냉장고 사진을 분석해 보유/구매 필요 재료를 영수증처럼 보여주는 앱",
+  "engines": {
+    "node": ">=18"
+  }
+}
