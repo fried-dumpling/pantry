@@ -19,6 +19,10 @@ preview.innerHTML = images.map(img => `
     <button class="rm" type="button" data-id="${img.id}" title="삭제">×</button>
     </div>
 `).join('');
+
+console.log(preview)
+console.log(previewCount)
+
 preview.classList.toggle('show', images.length > 0);
 previewCount.classList.toggle('show', images.length > 0);
 previewCount.textContent = images.length ? `${images.length}장 첨부됨 (최대 ${MAX_IMAGES}장)` : '';

@@ -118,20 +118,42 @@
   .preview{
     margin-top:14px;
     display:none;
-    align-items:center;
-    gap:12px;
-    background:#fff;
-    border:1px solid var(--line);
-    padding:8px;
-    border-radius:var(--radius);
+    flex-wrap:wrap;
+    gap:10px;
   }
   .preview.show{ display:flex; }
-  .preview img{ width:56px; height:56px; object-fit:cover; border-radius:2px; }
-  .preview .name{ font-size:12.5px; font-family:'IBM Plex Mono', monospace; color:var(--ink-soft); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .preview button{
-    background:none; border:none; color:var(--stamp); cursor:pointer; font-size:12px;
+  .thumb{
+    position:relative;
+    width:76px; height:76px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:#fff;
+    padding:4px;
+  }
+  .thumb img{ width:100%; height:100%; object-fit:cover; border-radius:2px; display:block; }
+  .thumb .rm{
+    position:absolute; top:-7px; right:-7px;
+    width:20px; height:20px;
+    border-radius:50%;
+    background:var(--stamp);
+    color:#fff;
+    border:none;
+    cursor:pointer;
+    font-size:12px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     font-family:'IBM Plex Mono', monospace;
   }
+  .preview-count{
+    font-size:12px;
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--ink-soft);
+    margin-top:8px;
+    display:none;
+  }
+  .preview-count.show{ display:block; }
 
   .go{
     width:100%;
@@ -287,14 +309,11 @@
   <div class="card">
     <h2><span class="num">2</span> 보유 재료 사진</h2>
     <label class="drop" id="dropZone">
-      <input type="file" id="fileInput" accept="image/*" />
-      <div class="drop-label"><b>클릭</b>하거나 이미지를 끌어다 놓으세요<br/>냉장고 · 팬트리 · 장바구니 사진 모두 좋아요</div>
+      <input type="file" id="fileInput" accept="image/*" multiple />
+      <div class="drop-label"><b>클릭</b>하거나 이미지를 끌어다 놓으세요 (여러 장 가능)<br/>냉장고 · 팬트리 · 장바구니 사진 모두 좋아요</div>
     </label>
-    <div class="preview" id="preview">
-      <img id="previewImg" />
-      <div class="name" id="previewName"></div>
-      <button id="previewRemove" type="button">삭제</button>
-    </div>
+    <div class="preview" id="preview"></div>
+    <p class="preview-count" id="previewCount"></p>
   </div>
 
   <button class="go" id="goBtn">영수증 뽑기</button>
@@ -307,6 +326,6 @@
   <footer>Gemini로 분석됨 · 결과는 참고용이며 실제 재료 상태와 다를 수 있어요</footer>
 </div>
 
-<script src="main.js"> </script>
+<script src="main.js"></script>
 </body>
 </html>
