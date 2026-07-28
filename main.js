@@ -127,8 +127,20 @@ function buildReceiptHTML(){
 
   const contextLabel = isAlt ? 'SUBSTITUTION MODE' : 'ANALYSIS MODE';
   const contextDesc = isAlt
-    ? (alt.description || `대체 재료를 반영한 "${alt.title || '대체 레시피'}" 버전이에요.`)
+    ? `대체 재료를 반영한 "${escapeHtml(alt.title || '대체 레시피')}" 버전이에요.`
     : `"${escapeHtml(data.recipeTitle || '레시피')}" 기준으로 부족한 재료를 확인했어요.`;
+
+  const summaryTitle = isAlt ? (alt.title || data.recipeTitle || '레시피') : (data.recipeTitle || '레시피');
+  const summaryText = isAlt
+    ? (alt.summary || alt.description || '대체재를 반영한 레시피 요약이 제공되지 않았어요.')
+    : (data.recipeSummary || '레시피 요약이 제공되지 않았어요.');
+  const summaryHtml = `
+    <div class="recipe-summary">
+      <p class="summary-eyebrow">RECIPE SUMMARY${isAlt ? ' · SUBSTITUTED' : ''}</p>
+      <h3 class="summary-title">${escapeHtml(summaryTitle)}</h3>
+      <p class="summary-desc">${escapeHtml(summaryText)}</p>
+    </div>
+  `;
 
   const inventoryHtml = owned.length
     ? owned.map(name => `
@@ -168,6 +180,8 @@ function buildReceiptHTML(){
       <h2>Kitchen Scanner</h2>
       <div class="tag">Artisanal Grocery List</div>
     </div>
+
+    ${summaryHtml}
 
     <div class="context-box ${isAlt ? 'alt-mode' : ''}">
       <p class="context-label">${contextLabel}</p>

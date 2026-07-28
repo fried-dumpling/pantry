@@ -277,6 +277,7 @@ h1 em{ font-style:italic; font-weight:400; }
 .receipt-scroll{
     max-height:calc(100vh - 160px);
     overflow-y:auto;
+    overflow-x:hidden;
     padding:2px 2px 24px;
     scrollbar-width:thin;
     scrollbar-color:var(--line) transparent;
@@ -308,10 +309,10 @@ h1 em{ font-style:italic; font-weight:400; }
 .printer-slot{
     position:relative;
     max-width:420px;
-    margin:0 auto 0 auto;
+    margin:6px auto 0 auto;
 }
 @media (min-width:1024px){
-    .printer-slot{ margin:0 0 0 auto; }
+    .printer-slot{ margin:6px 0 0 auto; }
 }
 
 .receipt{
@@ -361,6 +362,37 @@ h1 em{ font-style:italic; font-weight:400; }
     text-transform:uppercase;
     color:var(--ink-soft);
     opacity:.6;
+}
+
+.recipe-summary{
+    margin-bottom:22px;
+    padding-bottom:20px;
+    border-bottom:1px dashed rgba(10,14,7,.15);
+    text-align:center;
+}
+.summary-eyebrow{
+    margin:0 0 8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--mustard);
+}
+.summary-title{
+    margin:0 0 8px;
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-style:italic;
+    font-size:17px;
+    letter-spacing:-0.01em;
+    color:var(--on-surface);
+}
+.summary-desc{
+    margin:0;
+    font-size:12px;
+    line-height:1.7;
+    color:rgba(84,89,75,.9);
 }
 
 .context-box{
