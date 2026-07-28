@@ -15,21 +15,70 @@
 
 *{ box-sizing:border-box; }
 
+html, body{ height:100%; }
 body{
     margin:0;
     background:var(--paper-dark);
     color:var(--ink);
     font-family:'Inter', sans-serif;
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    padding:48px 16px 96px;
     background-image:
         radial-gradient(circle at 1px 1px, rgba(32,36,28,0.06) 1px, transparent 0);
     background-size: 18px 18px;
 }
 
-.page{ width:100%; max-width:640px; }
+.layout{
+    display:grid;
+    grid-template-columns: minmax(320px, 460px) 1fr;
+    align-items:start;
+    gap:32px;
+    max-width:1180px;
+    margin:0 auto;
+    padding:40px 24px;
+    min-height:100vh;
+}
+
+.panel-left{ width:100%; }
+
+.panel-right{
+    position:sticky;
+    top:40px;
+    height:calc(100vh - 80px);
+    display:flex;
+    flex-direction:column;
+}
+
+.receipt-scroll{
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    padding:4px 4px 24px;
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+    scrollbar-width:thin;
+    scrollbar-color:var(--line) transparent;
+}
+.receipt-scroll::-webkit-scrollbar{ width:8px; }
+.receipt-scroll::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px; }
+.receipt-scroll::-webkit-scrollbar-track{ background:transparent; }
+
+.empty-state{
+    flex:1;
+    min-height:280px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    border:1.5px dashed var(--line);
+    border-radius:var(--radius);
+    color:var(--ink-soft);
+    font-size:13.5px;
+    line-height:1.6;
+    padding:32px;
+}
+.empty-state.hide{ display:none; }
+.empty-icon{ font-size:32px; margin-bottom:10px; opacity:.6; }
 
 header{ text-align:center; margin-bottom:36px; }
 .eyebrow{
@@ -177,7 +226,7 @@ input[type=url]::placeholder{ color:#a8a091; }
 .status.error{ color:var(--stamp); }
 
 /* Receipt result */
-.receipt-wrap{ display:none; margin-top:28px; }
+.receipt-wrap{ display:none; flex-shrink:0; }
 .receipt-wrap.show{ display:block; animation:rise .35s ease; }
 @keyframes rise{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:translateY(0);} }
 
@@ -196,6 +245,27 @@ input[type=url]::placeholder{ color:#a8a091; }
 }
 .receipt::before{ top:-1px; }
 .receipt::after{ bottom:-1px; transform:rotate(180deg); }
+
+/* Alternative-recipe receipt: same ticket shape, mustard accent, ribbon label */
+.receipt-wrap.alt{ margin-top:-8px; }
+.receipt-wrap.alt .receipt{ border-color:var(--mustard); }
+.receipt-wrap.alt .receipt::before, .receipt-wrap.alt .receipt::after{
+    background-image: radial-gradient(circle at 6px 4px, var(--paper-dark) 4px, transparent 4.2px);
+}
+.receipt-ribbon{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:#fff;
+    background:var(--mustard);
+    padding:5px 12px;
+    border-radius:3px 3px 0 0;
+    margin-left:16px;
+    position:relative;
+    top:1px;
+}
 
 .receipt-title{
     font-family:'Fraunces', serif;
@@ -295,38 +365,27 @@ ul.sub-list{ list-style:none; margin:0; padding:0; }
     color:var(--ink-soft);
     line-height:1.4;
 }
+.sub-hint{
+    margin:12px 0 0;
+    font-size:12px;
+    color:var(--mustard);
+    text-align:center;
+}
 
-/* Alternative recipe card */
-.alt-recipe{
-    margin-top:20px;
-    padding:18px;
-    background:var(--produce-soft);
-    border:1px dashed var(--produce);
-    border-radius:var(--radius);
-}
-.alt-badge{
-    display:inline-block;
-    font-family:'IBM Plex Mono', monospace;
-    font-size:10.5px;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    color:#fff;
-    background:var(--produce);
-    padding:3px 8px;
-    border-radius:3px;
-    margin-bottom:8px;
-}
+/* Alternative recipe receipt content */
 .alt-title{
     font-family:'Fraunces', serif;
     font-weight:600;
-    font-size:18px;
-    margin-bottom:4px;
+    font-size:20px;
+    text-align:center;
+    margin:4px 0 2px;
 }
 .alt-desc{
     font-size:13px;
     color:var(--ink-soft);
     line-height:1.5;
-    margin-bottom:6px;
+    text-align:center;
+    margin-bottom:14px;
 }
 
 footer{
@@ -335,6 +394,24 @@ footer{
     font-family:'IBM Plex Mono', monospace;
     font-size:11px;
     color:#9b9382;
+}
+
+@media (max-width:900px){
+    .layout{
+        grid-template-columns: 1fr;
+        padding:24px 16px;
+        gap:24px;
+    }
+    .panel-right{
+        position:relative;
+        top:0;
+        height:auto;
+    }
+    .receipt-scroll{
+        overflow-y:visible;
+        max-height:none;
+    }
+    .empty-state{ min-height:160px; }
 }
 
 @media (max-width:480px){

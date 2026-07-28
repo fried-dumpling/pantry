@@ -7,6 +7,9 @@ const goBtn = document.getElementById('goBtn');
 const statusMsg = document.getElementById('statusMsg');
 const receiptWrap = document.getElementById('receiptWrap');
 const receiptEl = document.getElementById('receipt');
+const altReceiptWrap = document.getElementById('altReceiptWrap');
+const altReceiptEl = document.getElementById('altReceipt');
+const emptyState = document.getElementById('emptyState');
 
 const MAX_IMAGES = 8;
 // images: [{ id, file, dataUrl, base64, mimeType }]
@@ -90,12 +93,11 @@ function escapeHtml(str){
     }[c]));
 }
 
-    function renderReceipt(data){
+    function renderMainReceipt(data){
     const required = Array.isArray(data.requiredIngredients) ? data.requiredIngredients : [];
     const owned = Array.isArray(data.ownedIngredients) ? data.ownedIngredients : [];
     const missing = Array.isArray(data.missingIngredients) ? data.missingIngredients : [];
     const substitutions = Array.isArray(data.substitutions) ? data.substitutions : [];
-    const alt = data.alternativeRecipe && typeof data.alternativeRecipe === 'object' ? data.alternativeRecipe : null;
 
     const ownedHtml = owned.length
         ? owned.map(name => `<li><span><span class="mark">✓</span>${escapeHtml(name)}</span></li>`).join('')
@@ -120,30 +122,7 @@ function escapeHtml(str){
             </li>
           `).join('')}
         </ul>
-    ` : '';
-
-    const altRequiredHtml = alt && Array.isArray(alt.requiredIngredients) && alt.requiredIngredients.length
-        ? alt.requiredIngredients.map(item => `<li><span>${escapeHtml(item.name)}</span><span class="amt">${escapeHtml(item.amount || '')}</span></li>`).join('')
-        : '';
-
-    const altMissingHtml = alt && Array.isArray(alt.missingIngredients)
-        ? (alt.missingIngredients.length
-            ? alt.missingIngredients.map(item => `<li><span><span class="mark">＋</span>${escapeHtml(item.name)}</span><span class="amt">${escapeHtml(item.amount || '')}</span></li>`).join('')
-            : `<li style="border:none;color:var(--ink-soft)">이 버전대로 하면 살 재료가 없어요!</li>`)
-        : '';
-
-    const altSection = alt ? `
-        <div class="alt-recipe">
-          <div class="alt-badge">대체 레시피</div>
-          <div class="alt-title">${escapeHtml(alt.title || '대체 재료 버전')}</div>
-          ${alt.description ? `<div class="alt-desc">${escapeHtml(alt.description)}</div>` : ''}
-          ${altRequiredHtml ? `
-            <div class="section-label" style="margin-top:14px"><span>전체 재료</span><span>${alt.requiredIngredients.length}개</span></div>
-            <ul class="ing">${altRequiredHtml}</ul>
-          ` : ''}
-          <div class="section-label" style="margin-top:14px"><span>이 버전의 구매 필요</span><span>TO BUY</span></div>
-          <ul class="ing missing">${altMissingHtml}</ul>
-        </div>
+        <p class="sub-hint">👉 대체 재료를 반영한 버전은 아래 "대체 레시피" 영수증에서 확인하세요.</p>
     ` : '';
 
     receiptEl.innerHTML = `
@@ -157,9 +136,40 @@ function escapeHtml(str){
         <ul class="ing missing">${missingHtml}</ul>
         <div class="total"><span>장보기 목록</span><span>${missing.length}개 항목</span></div>
         ${substitutionsSection}
-        ${altSection}
     `;
     receiptWrap.classList.add('show');
+}
+
+function renderAltReceipt(alt){
+    if(!alt){
+        altReceiptWrap.classList.remove('show');
+        altReceiptEl.innerHTML = '';
+        return;
+    }
+
+    const required = Array.isArray(alt.requiredIngredients) ? alt.requiredIngredients : [];
+    const missing = Array.isArray(alt.missingIngredients) ? alt.missingIngredients : [];
+
+    const requiredHtml = required.length
+        ? required.map(item => `<li><span>${escapeHtml(item.name)}</span><span class="amt">${escapeHtml(item.amount || '')}</span></li>`).join('')
+        : `<li style="border:none;color:var(--ink-soft)">재료 정보가 없어요</li>`;
+
+    const missingHtml = missing.length
+        ? missing.map(item => `<li><span><span class="mark">＋</span>${escapeHtml(item.name)}</span><span class="amt">${escapeHtml(item.amount || '')}</span></li>`).join('')
+        : `<li style="border:none;color:var(--ink-soft)">이 버전대로 하면 살 재료가 없어요!</li>`;
+
+    altReceiptEl.innerHTML = `
+        <div class="alt-title">${escapeHtml(alt.title || '대체 재료 버전')}</div>
+        ${alt.description ? `<div class="alt-desc">${escapeHtml(alt.description)}</div>` : ''}
+        <hr class="divider" />
+        <div class="section-label"><span>전체 재료</span><span>${required.length}개</span></div>
+        <ul class="ing">${requiredHtml}</ul>
+        <hr class="divider" />
+        <div class="section-label stamp-row"><span>구매 필요</span><span>TO BUY</span>${missing.length ? '<span class="stamp">구매 필요</span>' : ''}</div>
+        <ul class="ing missing">${missingHtml}</ul>
+        <div class="total"><span>장보기 목록</span><span>${missing.length}개 항목</span></div>
+    `;
+    altReceiptWrap.classList.add('show');
 }
 
 async function handleGenerate(){
@@ -176,6 +186,8 @@ async function handleGenerate(){
 
     goBtn.disabled = true;
     receiptWrap.classList.remove('show');
+    altReceiptWrap.classList.remove('show');
+    emptyState.classList.add('hide');
     setStatus(`영상과 사진 ${images.length}장을 분석하는 중이에요... (최대 1분 정도 걸릴 수 있어요)`);
 
     try{
@@ -194,10 +206,12 @@ async function handleGenerate(){
         throw new Error(data.error || '분석 중 오류가 발생했어요.');
         }
 
-        renderReceipt(data);
+        renderMainReceipt(data);
+        renderAltReceipt(data.alternativeRecipe);
         setStatus('분석 완료!');
     }catch(err){
         console.error(err);
+        emptyState.classList.remove('hide');
         setStatus(err.message || '분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.', true);
     }finally{
         goBtn.disabled = false;
