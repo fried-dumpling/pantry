@@ -236,7 +236,10 @@ setInterval(updateClock, 1000);
 
 /* ---------- Actions ---------- */
 
-printBtn.addEventListener('click', () => window.print());
+printBtn.addEventListener('click', () => {
+    if(!resultData) return;
+    renderReceipt();
+});
 
 swapBtn.addEventListener('click', () => {
   if(!resultData || !resultData.alternativeRecipe) return;
@@ -283,7 +286,7 @@ async function handleGenerate(){
     }
 
     resultData = data;
-    renderReceipt();
+    //renderReceipt();
     printBtn.disabled = false;
     swapBtn.disabled = !data.alternativeRecipe;
     setStatus(DEFAULT_STATUS);

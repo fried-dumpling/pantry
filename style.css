@@ -236,7 +236,9 @@ h1 em{ font-style:italic; font-weight:400; }
 .status.error{ color:var(--stamp); opacity:1; }
 
 /* Right panel */
-.panel-right{ position:relative; }
+.panel-right{
+    position:relative;
+}
 
 .actions{
     display:flex;
@@ -285,6 +287,12 @@ h1 em{ font-style:italic; font-weight:400; }
 }
 @media (min-width:1024px){
     .printer-slot{ margin:0 0 0 auto; }
+}
+.printer-head{
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
 }
 .printer-head{
     height:12px;
