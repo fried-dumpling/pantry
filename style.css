@@ -300,6 +300,7 @@ h1 em{ font-style:italic; font-weight:400; }
 .printer-head{
     height:12px;
     width:104%;
+    margin-top:-5px;
     margin-left:-2%;
     background:var(--ink);
     border-radius:5px 5px 0 0;
