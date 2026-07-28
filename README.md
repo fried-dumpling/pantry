@@ -61,6 +61,22 @@ vercel dev
    재료 목록을 JSON으로 반환하면 그대로 프론트엔드에 전달해 영수증 UI로
    렌더링합니다.
 
+## 대체 재료 · 대체 레시피
+
+구매가 필요한 재료 중 사용자가 이미 보유한 다른 재료로 맛/식감/용도가
+충분히 비슷하게 대체할 수 있는 항목이 있으면, Gemini가 다음 두 가지를
+함께 반환합니다.
+
+- `substitutions`: `[{ missingIngredient, substituteWith, note }]` — 원래
+  사야 했던 재료와 그것을 대신할 보유 재료, 대체 이유를 짧게 설명한 목록
+- `alternativeRecipe`: `{ title, description, requiredIngredients,
+  missingIngredients } | null` — 대체재를 모두 반영한 레시피 버전. 대체
+  가능한 재료가 하나도 없으면 `null`입니다.
+
+프론트엔드는 대체 항목이 있을 때만 영수증 하단에 "대체 가능한 재료"
+목록과 "대체 레시피" 카드를 자동으로 보여줍니다. 대체 판단 기준(어디까지
+허용할지)은 `api/generate.js`의 `SYSTEM_PROMPT`에서 조정할 수 있습니다.
+
 ## 알아두면 좋은 점 / 한계
 
 - 보유 재료 사진은 여러 장(기본 최대 8장) 동시 업로드가 가능합니다.

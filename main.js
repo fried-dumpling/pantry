@@ -94,6 +94,8 @@ function escapeHtml(str){
     const required = Array.isArray(data.requiredIngredients) ? data.requiredIngredients : [];
     const owned = Array.isArray(data.ownedIngredients) ? data.ownedIngredients : [];
     const missing = Array.isArray(data.missingIngredients) ? data.missingIngredients : [];
+    const substitutions = Array.isArray(data.substitutions) ? data.substitutions : [];
+    const alt = data.alternativeRecipe && typeof data.alternativeRecipe === 'object' ? data.alternativeRecipe : null;
 
     const ownedHtml = owned.length
         ? owned.map(name => `<li><span><span class="mark">✓</span>${escapeHtml(name)}</span></li>`).join('')
@@ -102,6 +104,47 @@ function escapeHtml(str){
     const missingHtml = missing.length
         ? missing.map(item => `<li><span><span class="mark">＋</span>${escapeHtml(item.name)}</span><span class="amt">${escapeHtml(item.amount || '')}</span></li>`).join('')
         : `<li style="border:none;color:var(--ink-soft)">추가로 살 재료가 없어요, 바로 요리 시작!</li>`;
+
+    const substitutionsSection = substitutions.length ? `
+        <hr class="divider" />
+        <div class="section-label"><span>대체 가능한 재료</span><span>SWAP</span></div>
+        <ul class="sub-list">
+          ${substitutions.map(s => `
+            <li class="sub-item">
+              <div class="sub-swap">
+                <span class="sub-from">${escapeHtml(s.missingIngredient || '')}</span>
+                <span class="sub-arrow">→</span>
+                <span class="sub-to">${escapeHtml(s.substituteWith || '')}</span>
+              </div>
+              ${s.note ? `<div class="sub-note">${escapeHtml(s.note)}</div>` : ''}
+            </li>
+          `).join('')}
+        </ul>
+    ` : '';
+
+    const altRequiredHtml = alt && Array.isArray(alt.requiredIngredients) && alt.requiredIngredients.length
+        ? alt.requiredIngredients.map(item => `<li><span>${escapeHtml(item.name)}</span><span class="amt">${escapeHtml(item.amount || '')}</span></li>`).join('')
+        : '';
+
+    const altMissingHtml = alt && Array.isArray(alt.missingIngredients)
+        ? (alt.missingIngredients.length
+            ? alt.missingIngredients.map(item => `<li><span><span class="mark">＋</span>${escapeHtml(item.name)}</span><span class="amt">${escapeHtml(item.amount || '')}</span></li>`).join('')
+            : `<li style="border:none;color:var(--ink-soft)">이 버전대로 하면 살 재료가 없어요!</li>`)
+        : '';
+
+    const altSection = alt ? `
+        <div class="alt-recipe">
+          <div class="alt-badge">대체 레시피</div>
+          <div class="alt-title">${escapeHtml(alt.title || '대체 재료 버전')}</div>
+          ${alt.description ? `<div class="alt-desc">${escapeHtml(alt.description)}</div>` : ''}
+          ${altRequiredHtml ? `
+            <div class="section-label" style="margin-top:14px"><span>전체 재료</span><span>${alt.requiredIngredients.length}개</span></div>
+            <ul class="ing">${altRequiredHtml}</ul>
+          ` : ''}
+          <div class="section-label" style="margin-top:14px"><span>이 버전의 구매 필요</span><span>TO BUY</span></div>
+          <ul class="ing missing">${altMissingHtml}</ul>
+        </div>
+    ` : '';
 
     receiptEl.innerHTML = `
         <div class="receipt-title">${escapeHtml(data.recipeTitle || '레시피')}</div>
@@ -113,6 +156,8 @@ function escapeHtml(str){
         <div class="section-label stamp-row"><span>구매 필요</span><span>TO BUY</span>${missing.length ? '<span class="stamp">구매 필요</span>' : ''}</div>
         <ul class="ing missing">${missingHtml}</ul>
         <div class="total"><span>장보기 목록</span><span>${missing.length}개 항목</span></div>
+        ${substitutionsSection}
+        ${altSection}
     `;
     receiptWrap.classList.add('show');
 }

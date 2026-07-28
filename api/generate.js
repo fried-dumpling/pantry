@@ -34,13 +34,24 @@ const SYSTEM_PROMPT = `당신은 요리 재료를 정리해주는 어시스턴�
 - 필요한 재료 중, 사진 속 재료와 같거나 사실상 동일한 재료(예: "대파"와 "파", "다진 마늘"과 "마늘")는 "보유 재료"로 매칭하세요.
 - 매칭되지 않는 필요 재료는 "구매 필요 재료"로 분류하세요. 이때 분량도 함께 제공하세요.
 - 소금, 후추, 식용유처럼 사진에 없어도 일반적으로 집에 있을 법한 조미료라도, 사진들 어디에서도 실제로 보이지 않으면 반드시 "구매 필요 재료"로 분류하세요. 임의로 있다고 가정하지 마세요.
+- "구매 필요 재료" 각각에 대해, 사용자가 이미 가진 다른 재료로 맛/식감/용도가 충분히 비슷하게 대체할 수 있는지 판단하세요 (예: "생크림" 대신 보유한 "우유+버터", "청주" 대신 보유한 "맛술", "부추" 대신 보유한 "쪽파"). 무리한 대체(예: 핵심 재료를 전혀 다른 재료로 바꾸는 것)는 제안하지 마세요. 확실한 대체재가 있을 때만 substitutions에 넣으세요.
+- 대체 가능한 재료가 하나 이상 있다면, 그 대체재들을 모두 반영한 "대체 레시피 버전"을 만드세요 (alternativeRecipe). 이 버전의 requiredIngredients는 원래 레시피에서 대체 가능한 항목을 대체재로 바꾼 전체 재료 목록이고, missingIngredients는 대체를 적용한 뒤에도 여전히 사야 하는 재료만 남긴 목록입니다. 대체 가능한 재료가 하나도 없다면 alternativeRecipe는 null로 두고 substitutions는 빈 배열로 두세요.
 
 아래 JSON 스키마 형식으로만 응답하세요. 다른 설명, 마크다운, 코드펜스(백틱) 없이 순수 JSON 객체만 출력하세요:
 {
   "recipeTitle": "string, 레시피/요리 이름",
   "requiredIngredients": [ { "name": "string", "amount": "string" } ],
   "ownedIngredients": [ "string" ],
-  "missingIngredients": [ { "name": "string", "amount": "string" } ]
+  "missingIngredients": [ { "name": "string", "amount": "string" } ],
+  "substitutions": [
+    { "missingIngredient": "string, 원래 구매가 필요했던 재료", "substituteWith": "string, 대체에 쓸 보유 재료", "note": "string, 왜 대체 가능한지 짧은 설명 (맛/식감 차이 등)" }
+  ],
+  "alternativeRecipe": {
+    "title": "string, 대체 재료를 활용한 버전 이름",
+    "description": "string, 한두 문장 설명",
+    "requiredIngredients": [ { "name": "string", "amount": "string" } ],
+    "missingIngredients": [ { "name": "string", "amount": "string" } ]
+  } | null
 }`;
 
 module.exports = async function handler(req, res) {
@@ -121,6 +132,8 @@ module.exports = async function handler(req, res) {
     generationConfig: {
       temperature: 0.2,
       responseMimeType: 'application/json'
+      //잘릴시 추가
+      //maxOutputTokens: 2048
     }
   };
 
@@ -173,11 +186,23 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    const altRecipeRaw = parsed.alternativeRecipe;
+    const alternativeRecipe = (altRecipeRaw && typeof altRecipeRaw === 'object')
+      ? {
+          title: altRecipeRaw.title || '대체 재료 버전',
+          description: altRecipeRaw.description || '',
+          requiredIngredients: Array.isArray(altRecipeRaw.requiredIngredients) ? altRecipeRaw.requiredIngredients : [],
+          missingIngredients: Array.isArray(altRecipeRaw.missingIngredients) ? altRecipeRaw.missingIngredients : []
+        }
+      : null;
+
     return res.status(200).json({
       recipeTitle: parsed.recipeTitle || '레시피',
       requiredIngredients: Array.isArray(parsed.requiredIngredients) ? parsed.requiredIngredients : [],
       ownedIngredients: Array.isArray(parsed.ownedIngredients) ? parsed.ownedIngredients : [],
-      missingIngredients: Array.isArray(parsed.missingIngredients) ? parsed.missingIngredients : []
+      missingIngredients: Array.isArray(parsed.missingIngredients) ? parsed.missingIngredients : [],
+      substitutions: Array.isArray(parsed.substitutions) ? parsed.substitutions : [],
+      alternativeRecipe
     });
   } catch (err) {
     console.error('Gemini request failed:', err);

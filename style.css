@@ -272,6 +272,63 @@ ul.ing .amt{ color:var(--ink-soft); flex-shrink:0; }
     font-weight:600;
 }
 
+/* Substitutions */
+ul.sub-list{ list-style:none; margin:0; padding:0; }
+.sub-item{
+    padding:8px 0;
+    border-bottom:1px dotted var(--line);
+}
+.sub-item:last-child{ border-bottom:none; }
+.sub-swap{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13.5px;
+}
+.sub-from{ color:var(--stamp); text-decoration:line-through; text-decoration-color:var(--stamp); }
+.sub-arrow{ color:var(--ink-soft); }
+.sub-to{ color:var(--produce); font-weight:600; }
+.sub-note{
+    margin-top:3px;
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.4;
+}
+
+/* Alternative recipe card */
+.alt-recipe{
+    margin-top:20px;
+    padding:18px;
+    background:var(--produce-soft);
+    border:1px dashed var(--produce);
+    border-radius:var(--radius);
+}
+.alt-badge{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#fff;
+    background:var(--produce);
+    padding:3px 8px;
+    border-radius:3px;
+    margin-bottom:8px;
+}
+.alt-title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:18px;
+    margin-bottom:4px;
+}
+.alt-desc{
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin-bottom:6px;
+}
+
 footer{
     text-align:center;
     margin-top:28px;
