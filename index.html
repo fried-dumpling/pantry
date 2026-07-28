@@ -83,8 +83,48 @@
         </div>
       </section>
     </div>
+
+    <!-- BOARD: user feedback -->
+    <section class="board no-print" id="boardSection">
+      <div class="board-head">
+        <span class="board-eyebrow">User Feedback</span>
+        <h2>의견 게시판</h2>
+        <p class="board-sub">앱을 사용하면서 느낀 점이나 개선 아이디어를 자유롭게 남겨주세요. 다른 분들이 남긴 의견도 함께 볼 수 있어요.</p>
+      </div>
+
+      <div class="board-grid">
+        <form class="card board-form" id="boardForm">
+          <div class="card-head">
+            <span class="material-symbols-outlined board-form-icon">edit_note</span>
+            <label class="field-label">Leave Feedback</label>
+          </div>
+          <div class="input-pill">
+            <input type="text" id="boardName" placeholder="닉네임 (선택, 비워두면 익명)" maxlength="20" />
+          </div>
+          <div class="input-pill">
+            <textarea id="boardMessage" placeholder="의견을 남겨주세요 (최대 500자)" maxlength="500" rows="4"></textarea>
+          </div>
+          <button type="submit" class="go" id="boardSubmit">의견 등록하기</button>
+          <p class="status" id="boardStatus"></p>
+        </form>
+
+        <div class="card board-list-card">
+          <div class="board-list-head">
+            <div class="card-head" style="margin-bottom:0;">
+              <span class="material-symbols-outlined board-form-icon">forum</span>
+              <label class="field-label">Recent Feedback</label>
+            </div>
+            <span class="board-count" id="boardCount"></span>
+          </div>
+          <ul class="board-list" id="boardList">
+            <li class="board-empty">불러오는 중...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script src="main.js"></script>
+  <script type="module" src="board.js"></script>
 </body>
 </html>

@@ -97,9 +97,46 @@ vercel dev
 목록과 "대체 레시피" 카드를 자동으로 보여줍니다. 대체 판단 기준(어디까지
 허용할지)은 `api/generate.js`의 `SYSTEM_PROMPT`에서 조정할 수 있습니다.
 
-## 알아두면 좋은 점 / 한계
+## 의견 게시판 (Firebase Firestore)
 
-- 보유 재료 사진은 여러 장(기본 최대 8장) 동시 업로드가 가능합니다.
+화면 하단에 사용자 의견을 남기고 볼 수 있는 게시판(`board.js`)이 추가되어
+있습니다. Firebase Firestore의 `boardPosts` 컬렉션에 실시간으로 읽고 쓰는
+방식이며, `index.html`에 `<script type="module" src="board.js">`로 로드됩니다.
+
+**중요 — Firestore 데이터베이스 및 보안 규칙 설정이 반드시 필요합니다.**
+`board.js`에는 Firebase 프로젝트 설정(`firebaseConfig`)이 이미 포함되어
+있지만, 아래 두 가지를 Firebase 콘솔에서 직접 해주셔야 실제로 동작합니다.
+
+1. **Firestore 데이터베이스 생성**: Firebase 콘솔 → Firestore Database →
+   데이터베이스 만들기 (아직 만들지 않았다면).
+2. **보안 규칙 설정**: 기본(프로덕션 모드) 규칙은 모든 읽기/쓰기를 차단하므로,
+   `boardPosts` 컬렉션만 익명으로 읽고 쓸 수 있도록 규칙을 아래처럼
+   설정해야 합니다 (Firestore Database → 규칙 탭).
+
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /boardPosts/{postId} {
+         allow read: if true;
+         allow create: if request.resource.data.message is string
+                       && request.resource.data.message.size() > 0
+                       && request.resource.data.message.size() <= 500
+                       && request.resource.data.name is string
+                       && request.resource.data.name.size() <= 20;
+         allow update, delete: if false;
+       }
+     }
+   }
+   ```
+
+   이 규칙은 누구나 글을 읽고 새 글을 작성할 수 있게 하되, 수정·삭제는
+   막고 메시지 길이를 서버 쪽에서도 한 번 더 검증합니다. 완전히 공개된
+   익명 게시판이라 스팸/도배에 취약할 수 있으니, 운영 단계에서는 Firebase
+   App Check나 reCAPTCHA, 또는 간단한 요청 빈도 제한을 추가하는 것을
+   권장합니다.
+
+## 알아두면 좋은 점 / 한계 여러 장(기본 최대 8장) 동시 업로드가 가능합니다.
   냉장고, 팬트리, 장바구니처럼 서로 다른 장소를 나눠 찍어도 Gemini가
   모든 사진을 함께 보고 재료를 합산해 판단합니다. 최대 장수는
   `index.html`의 `MAX_IMAGES`와 `api/generate.js`의 `MAX_IMAGES`
