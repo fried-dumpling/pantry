@@ -316,7 +316,8 @@ h1 em{ font-style:normal; font-weight:400; }
 }
 .printer-head{
     height:14px;
-    width:100%;
+    width:104%;
+    margin-left: -2%;
     background:var(--ink);
     border-radius:7px;
     box-shadow:0 4px 12px rgba(0,0,0,.2);
