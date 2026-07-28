@@ -1,44 +1,44 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>장보기 영수증 · 레시피 재료 스캐너</title>
-<link rel="stylesheet" type="text/css" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>장보기 영수증 · 레시피 재료 스캐너</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-<div class="page">
-  <header>
-    <div class="eyebrow">AI 재료 스캐너</div>
-    <h1>장보기 영수증</h1>
-    <p class="sub">레시피 영상 링크와 냉장고 사진을 넣으면, 이미 있는 재료와 사야 할 재료를 영수증처럼 정리해드려요.</p>
-  </header>
+  <div class="page">
+    <header>
+      <div class="eyebrow">AI 재료 스캐너</div>
+      <h1>장보기 영수증</h1>
+      <p class="sub">레시피 영상 링크와 냉장고 사진을 넣으면, 이미 있는 재료와 사야 할 재료를 영수증처럼 정리해드려요.</p>
+    </header>
 
-  <div class="card">
-    <h2><span class="num">1</span> 레시피 유튜브 URL</h2>
-    <input type="url" id="ytUrl" placeholder="https://www.youtube.com/watch?v=..." />
+    <div class="card">
+      <h2><span class="num">1</span> 레시피 유튜브 URL</h2>
+      <input type="url" id="ytUrl" placeholder="https://www.youtube.com/watch?v=..." />
+    </div>
+
+    <div class="card">
+      <h2><span class="num">2</span> 보유 재료 사진</h2>
+      <label class="drop" id="dropZone">
+        <input type="file" id="fileInput" accept="image/*" multiple />
+        <div class="drop-label"><b>클릭</b>하거나 이미지를 끌어다 놓으세요 (여러 장 가능)<br/>냉장고 · 팬트리 · 장바구니 사진 모두 좋아요</div>
+      </label>
+      <div class="preview" id="preview"></div>
+      <p class="preview-count" id="previewCount"></p>
+    </div>
+
+    <button class="go" id="goBtn">영수증 뽑기</button>
+    <p class="status" id="statusMsg"></p>
+
+    <div class="receipt-wrap" id="receiptWrap">
+      <div class="receipt" id="receipt"></div>
+    </div>
+
+    <footer>Gemini로 분석됨 · 결과는 참고용이며 실제 재료 상태와 다를 수 있어요</footer>
   </div>
 
-  <div class="card">
-    <h2><span class="num">2</span> 보유 재료 사진</h2>
-    <label class="drop" id="dropZone">
-      <input type="file" id="fileInput" accept="image/*" multiple />
-      <div class="drop-label"><b>클릭</b>하거나 이미지를 끌어다 놓으세요 (여러 장 가능)<br/>냉장고 · 팬트리 · 장바구니 사진 모두 좋아요</div>
-    </label>
-    <div class="preview" id="preview"></div>
-    <p class="preview-count" id="previewCount"></p>
-  </div>
-
-  <button class="go" id="goBtn">영수증 뽑기</button>
-  <p class="status" id="statusMsg"></p>
-
-  <div class="receipt-wrap" id="receiptWrap">
-    <div class="receipt" id="receipt"></div>
-  </div>
-
-  <footer>Gemini로 분석됨 · 결과는 참고용이며 실제 재료 상태와 다를 수 있어요</footer>
-</div>
-
-<script src="main.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
