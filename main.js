@@ -5,217 +5,294 @@ const preview = document.getElementById('preview');
 const previewCount = document.getElementById('previewCount');
 const goBtn = document.getElementById('goBtn');
 const statusMsg = document.getElementById('statusMsg');
-const receiptWrap = document.getElementById('receiptWrap');
-const receiptEl = document.getElementById('receipt');
-const altReceiptWrap = document.getElementById('altReceiptWrap');
-const altReceiptEl = document.getElementById('altReceipt');
-const emptyState = document.getElementById('emptyState');
+const printBtn = document.getElementById('printBtn');
+const swapBtn = document.getElementById('swapBtn');
+const receiptContent = document.getElementById('receiptContent');
+const receiptPaper = document.getElementById('receiptPaper');
 
+const DEFAULT_STATUS = 'Gemini로 분석됨 · 결과는 참고용이며 실제 재료 상태와 다를 수 있어요';
 const MAX_IMAGES = 8;
+
+const EMPTY_STATE_HTML = `
+  <div class="empty-state" id="emptyState">
+    <span class="material-symbols-outlined empty-icon">receipt_long</span>
+    <p>왼쪽에 유튜브 URL과 재료 사진을 넣고<br/>"영수증 출력하기"를 누르면<br/>여기에 결과가 나와요.</p>
+  </div>
+`;
+
 // images: [{ id, file, dataUrl, base64, mimeType }]
 let images = [];
+// last successful API response
+let resultData = null;
+// 'main' | 'alt'
+let currentView = 'main';
 
-function renderPreviews(){
-    preview.innerHTML = images.map(img => `
-        <div class="thumb" data-id="${img.id}">
-        <img src="${img.dataUrl}" alt="${escapeHtml(img.file.name)}" />
-        <button class="rm" type="button" data-id="${img.id}" title="삭제">×</button>
-        </div>
-    `).join('');
-
-    preview.classList.toggle('show', images.length > 0);
-    previewCount.classList.toggle('show', images.length > 0);
-    previewCount.textContent = images.length ? `${images.length}장 첨부됨 (최대 ${MAX_IMAGES}장)` : '';
-}
-
-function addFiles(fileList){
-    const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
-    const room = MAX_IMAGES - images.length;
-    if(room <= 0){
-        setStatus(`사진은 최대 ${MAX_IMAGES}장까지 첨부할 수 있어요.`, true);
-        return;
-    }
-    files.slice(0, room).forEach(file => {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-    const reader = new FileReader();
-    reader.onload = () => {
-    const dataUrl = reader.result; // data:<mime>;base64,<data>
-    images.push({
-    id,
-    file,
-    dataUrl,
-    base64: dataUrl.split(',')[1],
-    mimeType: file.type
-    });
-    renderPreviews();
-    };
-    reader.readAsDataURL(file);
-    });
-    if(files.length > room){
-        setStatus(`사진은 최대 ${MAX_IMAGES}장까지 첨부할 수 있어요. 앞의 ${room}장만 추가했어요.`, true);
-    }
-}
-
-fileInput.addEventListener('change', e => {
-    addFiles(e.target.files);
-    fileInput.value = ''; // allow re-selecting the same file(s) later
-    });
-
-['dragover','dragenter'].forEach(evt =>
-dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add('drag'); })
-);
-['dragleave','drop'].forEach(evt =>
-dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.remove('drag'); })
-);
-dropZone.addEventListener('drop', e => {
-if(e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
-});
-
-preview.addEventListener('click', e => {
-    const btn = e.target.closest('.rm');
-    if(!btn) return;
-    images = images.filter(img => img.id !== btn.dataset.id);
-    renderPreviews();
-});
-
-function isValidYoutubeUrl(url){
-    return /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)/.test(url.trim());
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
 }
 
 function setStatus(text, isError=false){
-    statusMsg.textContent = text;
-    statusMsg.classList.toggle('error', isError);
+  statusMsg.textContent = text;
+  statusMsg.classList.toggle('error', isError);
 }
 
-function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, c => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    }[c]));
+/* ---------- Image upload / preview ---------- */
+
+function renderPreviews(){
+  preview.innerHTML = images.map(img => `
+    <div class="thumb" data-id="${img.id}">
+      <img src="${img.dataUrl}" alt="${escapeHtml(img.file.name)}" />
+      <button class="rm" type="button" data-id="${img.id}" title="삭제">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+  `).join('');
+  previewCount.textContent = images.length ? `${images.length}장 첨부됨 (최대 ${MAX_IMAGES}장)` : '';
 }
 
-    function renderMainReceipt(data){
-    const required = Array.isArray(data.requiredIngredients) ? data.requiredIngredients : [];
-    const owned = Array.isArray(data.ownedIngredients) ? data.ownedIngredients : [];
-    const missing = Array.isArray(data.missingIngredients) ? data.missingIngredients : [];
-    const substitutions = Array.isArray(data.substitutions) ? data.substitutions : [];
-
-    const ownedHtml = owned.length
-        ? owned.map(name => `<li><span><span class="mark">✓</span>${escapeHtml(name)}</span></li>`).join('')
-        : `<li style="border:none;color:var(--ink-soft)">보유 재료가 확인되지 않았어요</li>`;
-
-    const missingHtml = missing.length
-        ? missing.map(item => `<li><span><span class="mark">＋</span>${escapeHtml(item.name)}</span><span class="amt">${escapeHtml(item.amount || '')}</span></li>`).join('')
-        : `<li style="border:none;color:var(--ink-soft)">추가로 살 재료가 없어요, 바로 요리 시작!</li>`;
-
-    const substitutionsSection = substitutions.length ? `
-        <hr class="divider" />
-        <div class="section-label"><span>대체 가능한 재료</span><span>SWAP</span></div>
-        <ul class="sub-list">
-          ${substitutions.map(s => `
-            <li class="sub-item">
-              <div class="sub-swap">
-                <span class="sub-from">${escapeHtml(s.missingIngredient || '')}</span>
-                <span class="sub-arrow">→</span>
-                <span class="sub-to">${escapeHtml(s.substituteWith || '')}</span>
-              </div>
-              ${s.note ? `<div class="sub-note">${escapeHtml(s.note)}</div>` : ''}
-            </li>
-          `).join('')}
-        </ul>
-        <p class="sub-hint">👉 대체 재료를 반영한 버전은 아래 "대체 레시피" 영수증에서 확인하세요.</p>
-    ` : '';
-
-    receiptEl.innerHTML = `
-        <div class="receipt-title">${escapeHtml(data.recipeTitle || '레시피')}</div>
-        <div class="receipt-meta">TOTAL ${required.length}개 재료 · 보유 ${owned.length} · 구매 필요 ${missing.length}</div>
-        <hr class="divider" />
-        <div class="section-label"><span>보유 재료</span><span>OWNED</span></div>
-        <ul class="ing owned">${ownedHtml}</ul>
-        <hr class="divider" />
-        <div class="section-label stamp-row"><span>구매 필요</span><span>TO BUY</span>${missing.length ? '<span class="stamp">구매 필요</span>' : ''}</div>
-        <ul class="ing missing">${missingHtml}</ul>
-        <div class="total"><span>장보기 목록</span><span>${missing.length}개 항목</span></div>
-        ${substitutionsSection}
-    `;
-    receiptWrap.classList.add('show');
+function addFiles(fileList){
+  const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+  const room = MAX_IMAGES - images.length;
+  if(room <= 0){
+    setStatus(`사진은 최대 ${MAX_IMAGES}장까지 첨부할 수 있어요.`, true);
+    return;
+  }
+  files.slice(0, room).forEach(file => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      images.push({
+        id,
+        file,
+        dataUrl,
+        base64: dataUrl.split(',')[1],
+        mimeType: file.type
+      });
+      renderPreviews();
+    };
+    reader.readAsDataURL(file);
+  });
+  if(files.length > room){
+    setStatus(`사진은 최대 ${MAX_IMAGES}장까지 첨부할 수 있어요. 앞의 ${room}장만 추가했어요.`, true);
+  }
 }
 
-function renderAltReceipt(alt){
-    if(!alt){
-        altReceiptWrap.classList.remove('show');
-        altReceiptEl.innerHTML = '';
-        return;
-    }
+dropZone.addEventListener('click', (e) => {
+  // avoid double-trigger when the native label->input click already fires
+  if(e.target.closest('input')) return;
+});
+fileInput.addEventListener('change', e => {
+  addFiles(e.target.files);
+  fileInput.value = '';
+});
 
-    const required = Array.isArray(alt.requiredIngredients) ? alt.requiredIngredients : [];
-    const missing = Array.isArray(alt.missingIngredients) ? alt.missingIngredients : [];
+['dragover','dragenter'].forEach(evt =>
+  dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add('drag'); })
+);
+['dragleave','drop'].forEach(evt =>
+  dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.remove('drag'); })
+);
+dropZone.addEventListener('drop', e => {
+  if(e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
+});
 
-    const requiredHtml = required.length
-        ? required.map(item => `<li><span>${escapeHtml(item.name)}</span><span class="amt">${escapeHtml(item.amount || '')}</span></li>`).join('')
-        : `<li style="border:none;color:var(--ink-soft)">재료 정보가 없어요</li>`;
+preview.addEventListener('click', e => {
+  const btn = e.target.closest('.rm');
+  if(!btn) return;
+  images = images.filter(img => img.id !== btn.dataset.id);
+  renderPreviews();
+});
 
-    const missingHtml = missing.length
-        ? missing.map(item => `<li><span><span class="mark">＋</span>${escapeHtml(item.name)}</span><span class="amt">${escapeHtml(item.amount || '')}</span></li>`).join('')
-        : `<li style="border:none;color:var(--ink-soft)">이 버전대로 하면 살 재료가 없어요!</li>`;
+/* ---------- Receipt rendering ---------- */
 
-    altReceiptEl.innerHTML = `
-        <div class="alt-title">${escapeHtml(alt.title || '대체 재료 버전')}</div>
-        ${alt.description ? `<div class="alt-desc">${escapeHtml(alt.description)}</div>` : ''}
-        <hr class="divider" />
-        <div class="section-label"><span>전체 재료</span><span>${required.length}개</span></div>
-        <ul class="ing">${requiredHtml}</ul>
-        <hr class="divider" />
-        <div class="section-label stamp-row"><span>구매 필요</span><span>TO BUY</span>${missing.length ? '<span class="stamp">구매 필요</span>' : ''}</div>
-        <ul class="ing missing">${missingHtml}</ul>
-        <div class="total"><span>장보기 목록</span><span>${missing.length}개 항목</span></div>
-    `;
-    altReceiptWrap.classList.add('show');
+function isValidYoutubeUrl(url){
+  return /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)/.test(url.trim());
 }
+
+function ingredientRow({ name, amount, mark }){
+  return `<li><span>${mark || ''}${escapeHtml(name)}</span>${amount ? `<span class="amt">${escapeHtml(amount)}</span>` : ''}</li>`;
+}
+
+function buildReceiptHTML(){
+  const data = resultData;
+  const owned = Array.isArray(data.ownedIngredients) ? data.ownedIngredients : [];
+  const required = Array.isArray(data.requiredIngredients) ? data.requiredIngredients : [];
+  const missing = Array.isArray(data.missingIngredients) ? data.missingIngredients : [];
+  const substitutions = Array.isArray(data.substitutions) ? data.substitutions : [];
+  const alt = data.alternativeRecipe || null;
+  const isAlt = currentView === 'alt' && alt;
+
+  const contextLabel = isAlt ? 'SUBSTITUTION MODE' : 'ANALYSIS MODE';
+  const contextDesc = isAlt
+    ? (alt.description || `대체 재료를 반영한 "${alt.title || '대체 레시피'}" 버전이에요.`)
+    : `"${escapeHtml(data.recipeTitle || '레시피')}" 기준으로 부족한 재료를 확인했어요.`;
+
+  const inventoryHtml = owned.length
+    ? owned.map(name => `
+        <li><span>${escapeHtml(name)}</span><span class="material-symbols-outlined owned-check">check_circle</span></li>
+      `).join('')
+    : `<li class="empty-row">보유 재료가 확인되지 않았어요</li>`;
+
+  let shoppingHtml;
+  let shoppingCount;
+  let totalCount;
+
+  if(isAlt){
+    const altMissing = Array.isArray(alt.missingIngredients) ? alt.missingIngredients : [];
+    const altRequired = Array.isArray(alt.requiredIngredients) ? alt.requiredIngredients : [];
+    const subRows = substitutions.map(s => `
+      <li class="sub-row">
+        <span class="sub-label">${escapeHtml(s.missingIngredient || '')} → ${escapeHtml(s.substituteWith || '')}</span>
+        <span class="sub-tag">SUBSTITUTED</span>
+      </li>
+    `).join('');
+    const missingRows = altMissing.length
+      ? altMissing.map(item => ingredientRow(item)).join('')
+      : (subRows ? '' : `<li class="empty-row">구매할 재료가 없어요!</li>`);
+    shoppingHtml = subRows + missingRows;
+    shoppingCount = altMissing.length;
+    totalCount = altRequired.length;
+  } else {
+    shoppingHtml = missing.length
+      ? missing.map(item => ingredientRow(item)).join('')
+      : `<li class="empty-row">추가로 살 재료가 없어요, 바로 요리 시작!</li>`;
+    shoppingCount = missing.length;
+    totalCount = required.length;
+  }
+
+  return `
+    <div class="receipt-brand">
+      <h2>Kitchen Scanner</h2>
+      <div class="tag">Artisanal Grocery List</div>
+    </div>
+
+    <div class="context-box ${isAlt ? 'alt-mode' : ''}">
+      <p class="context-label">${contextLabel}</p>
+      <p class="context-desc">${contextDesc}</p>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h3>Inventory</h3>
+        <span class="stamp stamp-owned">OWNED</span>
+      </div>
+      <ul class="ing">${inventoryHtml}</ul>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h3>To Buy</h3>
+        <span class="stamp stamp-tobuy">PENDING</span>
+      </div>
+      <ul class="ing">${shoppingHtml}</ul>
+    </div>
+
+    <div class="total-block">
+      <div class="total-row dim">
+        <span>Total Items</span>
+        <span>${totalCount}개</span>
+      </div>
+      <div class="total-row main">
+        <span class="label">구매 필요</span>
+        <span class="value">${shoppingCount}개</span>
+      </div>
+    </div>
+
+    <div class="receipt-meta">
+      <p id="receiptDate"></p>
+      <p>Processed by AI Engine</p>
+      <p>*** FINISH ***</p>
+    </div>
+  `;
+}
+
+function replayPrintAnimation(){
+  receiptPaper.style.animation = 'none';
+  void receiptPaper.offsetWidth;
+  receiptPaper.style.animation = '';
+}
+
+function renderReceipt(){
+  if(!resultData){
+    receiptContent.innerHTML = EMPTY_STATE_HTML;
+    return;
+  }
+  receiptContent.innerHTML = buildReceiptHTML();
+  updateClock();
+  replayPrintAnimation();
+}
+
+function updateClock(){
+  const dateEl = document.getElementById('receiptDate');
+  if(!dateEl) return;
+  const now = new Date();
+  const pad = n => n.toString().padStart(2, '0');
+  dateEl.textContent = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}-${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+setInterval(updateClock, 1000);
+
+/* ---------- Actions ---------- */
+
+printBtn.addEventListener('click', () => window.print());
+
+swapBtn.addEventListener('click', () => {
+  if(!resultData || !resultData.alternativeRecipe) return;
+  currentView = currentView === 'main' ? 'alt' : 'main';
+  swapBtn.classList.toggle('active', currentView === 'alt');
+  renderReceipt();
+});
 
 async function handleGenerate(){
-    const youtubeUrl = ytUrlInput.value.trim();
+  const youtubeUrl = ytUrlInput.value.trim();
 
-    if(!isValidYoutubeUrl(youtubeUrl)){
-        setStatus('올바른 유튜브 URL을 입력해주세요.', true);
-        return;
+  if(!isValidYoutubeUrl(youtubeUrl)){
+    setStatus('올바른 유튜브 URL을 입력해주세요.', true);
+    return;
+  }
+  if(images.length === 0){
+    setStatus('보유 재료 사진을 한 장 이상 업로드해주세요.', true);
+    return;
+  }
+
+  goBtn.disabled = true;
+  printBtn.disabled = true;
+  swapBtn.disabled = true;
+  swapBtn.classList.remove('active');
+  currentView = 'main';
+  resultData = null;
+  renderReceipt();
+  setStatus(`영상과 사진 ${images.length}장을 분석하는 중이에요... (최대 1분 정도 걸릴 수 있어요)`);
+
+  try{
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        youtubeUrl,
+        images: images.map(img => ({ mimeType: img.mimeType, data: img.base64 }))
+      })
+    });
+
+    const data = await res.json();
+
+    if(!res.ok){
+      throw new Error(data.error || '분석 중 오류가 발생했어요.');
     }
-    if(images.length === 0){
-        setStatus('보유 재료 사진을 한 장 이상 업로드해주세요.', true);
-        return;
-    }
 
-    goBtn.disabled = true;
-    receiptWrap.classList.remove('show');
-    altReceiptWrap.classList.remove('show');
-    emptyState.classList.add('hide');
-    setStatus(`영상과 사진 ${images.length}장을 분석하는 중이에요... (최대 1분 정도 걸릴 수 있어요)`);
-
-    try{
-        const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            youtubeUrl,
-            images: images.map(img => ({ mimeType: img.mimeType, data: img.base64 }))
-        })
-        });
-
-        const data = await res.json();
-
-        if(!res.ok){
-        throw new Error(data.error || '분석 중 오류가 발생했어요.');
-        }
-
-        renderMainReceipt(data);
-        renderAltReceipt(data.alternativeRecipe);
-        setStatus('분석 완료!');
-    }catch(err){
-        console.error(err);
-        emptyState.classList.remove('hide');
-        setStatus(err.message || '분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.', true);
-    }finally{
-        goBtn.disabled = false;
-    }
+    resultData = data;
+    renderReceipt();
+    printBtn.disabled = false;
+    swapBtn.disabled = !data.alternativeRecipe;
+    setStatus(DEFAULT_STATUS);
+  }catch(err){
+    console.error(err);
+    setStatus(err.message || '분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.', true);
+  }finally{
+    goBtn.disabled = false;
+  }
 }
 
 goBtn.addEventListener('click', handleGenerate);

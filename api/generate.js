@@ -132,8 +132,6 @@ module.exports = async function handler(req, res) {
     generationConfig: {
       temperature: 0.2,
       responseMimeType: 'application/json'
-      //잘릴시 추가
-      //maxOutputTokens: 2048
     }
   };
 
