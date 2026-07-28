@@ -30,20 +30,20 @@ const SYSTEM_PROMPT = `당신은 요리 재료를 정리해주는 어시스턴�
 
 작업:
 - 영상을 보고 레시피 이름과 필요한 재료 목록(분량 포함, 분량을 알 수 없으면 빈 문자열)을 추출하세요.
-- 레시피를 2~3문장으로 간단히 요약하세요 (어떤 요리인지, 핵심 조리 흐름이나 특징 위주로, 재료 나열은 피하세요).
-- 제공된 모든 사진을 함께 보고, 사진들에 걸쳐 등장하는 재료를 합쳐서 사용자가 실제로 소유한 재료 목록을 추출하세요. 같은 재료가 여러 사진에 나오면 한 번만 표시하세요.
+- 영상 속 조리 과정을 실제 순서대로 정리해 단계별 리스트(recipeSteps)로 만드세요. 각 항목은 배열의 원소 하나가 한 단계이며(번호는 프론트엔드가 자동으로 붙이므로 "1." 같은 번호를 직접 쓰지 마세요), 재료 손질 방법·불 세기·시간처럼 영상에서 확인되는 구체적인 정보를 포함해 간결한 한 문장으로 적으세요.
+- 제공된 모든 사진을 함께 보고, 사진들에 걸쳐 등장하는 재료를 합쳐서 사용자가 실제로 소유한 재료 목록을 추출하세요. 같은 재료가 여러 사진에 나오면 한 번만 표시하세요. 각 보유 재료마다 이 레시피에서 필요한 분량(requiredIngredients 기준)도 함께 표기하세요. 분량을 알 수 없으면 빈 문자열로 두세요.
 - 필요한 재료 중, 사진 속 재료와 같거나 사실상 동일한 재료(예: "대파"와 "파", "다진 마늘"과 "마늘")는 "보유 재료"로 매칭하세요.
 - 매칭되지 않는 필요 재료는 "구매 필요 재료"로 분류하세요. 이때 분량도 함께 제공하세요.
 - 소금, 후추, 식용유처럼 사진에 없어도 일반적으로 집에 있을 법한 조미료라도, 사진들 어디에서도 실제로 보이지 않으면 반드시 "구매 필요 재료"로 분류하세요. 임의로 있다고 가정하지 마세요.
 - "구매 필요 재료" 각각에 대해, 사용자가 이미 가진 다른 재료로 맛/식감/용도가 충분히 비슷하게 대체할 수 있는지 판단하세요 (예: "생크림" 대신 보유한 "우유+버터", "청주" 대신 보유한 "맛술", "부추" 대신 보유한 "쪽파"). 무리한 대체(예: 핵심 재료를 전혀 다른 재료로 바꾸는 것)는 제안하지 마세요. 확실한 대체재가 있을 때만 substitutions에 넣으세요.
-- 대체 가능한 재료가 하나 이상 있다면, 그 대체재들을 모두 반영한 "대체 레시피 버전"을 만드세요 (alternativeRecipe). 이 버전의 requiredIngredients는 원래 레시피에서 대체 가능한 항목을 대체재로 바꾼 전체 재료 목록이고, missingIngredients는 대체를 적용한 뒤에도 여전히 사야 하는 재료만 남긴 목록입니다. summary는 원래 레시피 요약(recipeSummary)을 바탕으로, 어떤 재료가 무엇으로 바뀌었는지와 그로 인한 맛/식감 차이를 반영해 2~3문장으로 다시 쓰세요. 대체 가능한 재료가 하나도 없다면 alternativeRecipe는 null로 두고 substitutions는 빈 배열로 두세요.
+- 대체 가능한 재료가 하나 이상 있다면, 그 대체재들을 모두 반영한 "대체 레시피 버전"을 만드세요 (alternativeRecipe). 이 버전의 requiredIngredients는 원래 레시피에서 대체 가능한 항목을 대체재로 바꾼 전체 재료 목록이고, missingIngredients는 대체를 적용한 뒤에도 여전히 사야 하는 재료만 남긴 목록입니다. steps는 recipeSteps를 바탕으로 다시 쓰되, 원래 레시피의 맛/식감이 최대한 유지되도록 대체재를 "얼마나"(분량을 원재료 기준으로 환산해서), "어떻게"(간 것/다진 것/깍둑썰기 등 손질·조리 방식) 넣어야 하는지 원래 단계보다 더 구체적으로 명시하세요. 단순히 재료 이름만 바꿔 적지 마세요. 대체 가능한 재료가 하나도 없다면 alternativeRecipe는 null로 두고 substitutions는 빈 배열로 두세요.
 
 아래 JSON 스키마 형식으로만 응답하세요. 다른 설명, 마크다운, 코드펜스(백틱) 없이 순수 JSON 객체만 출력하세요:
 {
   "recipeTitle": "string, 레시피/요리 이름",
-  "recipeSummary": "string, 레시피를 2~3문장으로 요약한 설명 (재료 나열 금지)",
+  "recipeSteps": [ "string, 조리 순서상 한 단계" ],
   "requiredIngredients": [ { "name": "string", "amount": "string" } ],
-  "ownedIngredients": [ "string" ],
+  "ownedIngredients": [ { "name": "string", "amount": "string, 레시피 기준 필요한 분량" } ],
   "missingIngredients": [ { "name": "string", "amount": "string" } ],
   "substitutions": [
     { "missingIngredient": "string, 원래 구매가 필요했던 재료", "substituteWith": "string, 대체에 쓸 보유 재료", "note": "string, 왜 대체 가능한지 짧은 설명 (맛/식감 차이 등)" }
@@ -51,7 +51,7 @@ const SYSTEM_PROMPT = `당신은 요리 재료를 정리해주는 어시스턴�
   "alternativeRecipe": {
     "title": "string, 대체 재료를 활용한 버전 이름",
     "description": "string, 한두 문장 설명",
-    "summary": "string, 대체재를 반영해 다시 쓴 2~3문장 레시피 요약",
+    "steps": [ "string, 대체재의 분량·손질 방식까지 반영해 다시 쓴 조리 단계" ],
     "requiredIngredients": [ { "name": "string", "amount": "string" } ],
     "missingIngredients": [ { "name": "string", "amount": "string" } ]
   } | null
@@ -187,12 +187,22 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    const ownedIngredients = (Array.isArray(parsed.ownedIngredients) ? parsed.ownedIngredients : [])
+      .map((item) => {
+        if (item && typeof item === 'object') {
+          return { name: item.name || '', amount: item.amount || '' };
+        }
+        // backward compatibility in case the model returns a plain string
+        return { name: typeof item === 'string' ? item : '', amount: '' };
+      })
+      .filter((item) => item.name);
+
     const altRecipeRaw = parsed.alternativeRecipe;
     const alternativeRecipe = (altRecipeRaw && typeof altRecipeRaw === 'object')
       ? {
           title: altRecipeRaw.title || '대체 재료 버전',
           description: altRecipeRaw.description || '',
-          summary: altRecipeRaw.summary || altRecipeRaw.description || '',
+          steps: Array.isArray(altRecipeRaw.steps) ? altRecipeRaw.steps.filter((s) => typeof s === 'string' && s.trim()) : [],
           requiredIngredients: Array.isArray(altRecipeRaw.requiredIngredients) ? altRecipeRaw.requiredIngredients : [],
           missingIngredients: Array.isArray(altRecipeRaw.missingIngredients) ? altRecipeRaw.missingIngredients : []
         }
@@ -200,9 +210,9 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       recipeTitle: parsed.recipeTitle || '레시피',
-      recipeSummary: parsed.recipeSummary || '',
+      recipeSteps: Array.isArray(parsed.recipeSteps) ? parsed.recipeSteps.filter((s) => typeof s === 'string' && s.trim()) : [],
       requiredIngredients: Array.isArray(parsed.requiredIngredients) ? parsed.requiredIngredients : [],
-      ownedIngredients: Array.isArray(parsed.ownedIngredients) ? parsed.ownedIngredients : [],
+      ownedIngredients,
       missingIngredients: Array.isArray(parsed.missingIngredients) ? parsed.missingIngredients : [],
       substitutions: Array.isArray(parsed.substitutions) ? parsed.substitutions : [],
       alternativeRecipe

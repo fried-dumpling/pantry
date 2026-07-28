@@ -119,7 +119,6 @@ function ingredientRow({ name, amount, mark }){
 function buildReceiptHTML(){
   const data = resultData;
   const owned = Array.isArray(data.ownedIngredients) ? data.ownedIngredients : [];
-  const required = Array.isArray(data.requiredIngredients) ? data.requiredIngredients : [];
   const missing = Array.isArray(data.missingIngredients) ? data.missingIngredients : [];
   const substitutions = Array.isArray(data.substitutions) ? data.substitutions : [];
   const alt = data.alternativeRecipe || null;
@@ -131,30 +130,36 @@ function buildReceiptHTML(){
     : `"${escapeHtml(data.recipeTitle || '레시피')}" 기준으로 부족한 재료를 확인했어요.`;
 
   const summaryTitle = isAlt ? (alt.title || data.recipeTitle || '레시피') : (data.recipeTitle || '레시피');
-  const summaryText = isAlt
-    ? (alt.summary || alt.description || '대체재를 반영한 레시피 요약이 제공되지 않았어요.')
-    : (data.recipeSummary || '레시피 요약이 제공되지 않았어요.');
+  const steps = isAlt
+    ? (Array.isArray(alt.steps) && alt.steps.length ? alt.steps : (Array.isArray(data.recipeSteps) ? data.recipeSteps : []))
+    : (Array.isArray(data.recipeSteps) ? data.recipeSteps : []);
+  const stepsHtml = steps.length
+    ? `<ol class="steps">${steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>`
+    : `<p class="summary-desc">레시피 단계가 제공되지 않았어요.</p>`;
   const summaryHtml = `
     <div class="recipe-summary">
-      <p class="summary-eyebrow">RECIPE SUMMARY${isAlt ? ' · SUBSTITUTED' : ''}</p>
+      <p class="summary-eyebrow">RECIPE${isAlt ? ' · SUBSTITUTED' : ''}</p>
       <h3 class="summary-title">${escapeHtml(summaryTitle)}</h3>
-      <p class="summary-desc">${escapeHtml(summaryText)}</p>
+      ${stepsHtml}
     </div>
   `;
 
   const inventoryHtml = owned.length
-    ? owned.map(name => `
-        <li><span>${escapeHtml(name)}</span><span class="material-symbols-outlined owned-check">check_circle</span></li>
+    ? owned.map(item => `
+        <li>
+          <span>${escapeHtml(item.name || '')}</span>
+          <span class="owned-right">
+            ${item.amount ? `<span class="amt">${escapeHtml(item.amount)}</span>` : ''}
+            <span class="material-symbols-outlined owned-check">check_circle</span>
+          </span>
+        </li>
       `).join('')
     : `<li class="empty-row">보유 재료가 확인되지 않았어요</li>`;
 
   let shoppingHtml;
-  let shoppingCount;
-  let totalCount;
 
   if(isAlt){
     const altMissing = Array.isArray(alt.missingIngredients) ? alt.missingIngredients : [];
-    const altRequired = Array.isArray(alt.requiredIngredients) ? alt.requiredIngredients : [];
     const subRows = substitutions.map(s => `
       <li class="sub-row">
         <span class="sub-label">${escapeHtml(s.missingIngredient || '')} → ${escapeHtml(s.substituteWith || '')}</span>
@@ -165,14 +170,10 @@ function buildReceiptHTML(){
       ? altMissing.map(item => ingredientRow(item)).join('')
       : (subRows ? '' : `<li class="empty-row">구매할 재료가 없어요!</li>`);
     shoppingHtml = subRows + missingRows;
-    shoppingCount = altMissing.length;
-    totalCount = altRequired.length;
   } else {
     shoppingHtml = missing.length
       ? missing.map(item => ingredientRow(item)).join('')
       : `<li class="empty-row">추가로 살 재료가 없어요, 바로 요리 시작!</li>`;
-    shoppingCount = missing.length;
-    totalCount = required.length;
   }
 
   return `
@@ -202,17 +203,6 @@ function buildReceiptHTML(){
         <span class="stamp stamp-tobuy">PENDING</span>
       </div>
       <ul class="ing">${shoppingHtml}</ul>
-    </div>
-
-    <div class="total-block">
-      <div class="total-row dim">
-        <span>Total Items</span>
-        <span>${totalCount}개</span>
-      </div>
-      <div class="total-row main">
-        <span class="label">구매 필요</span>
-        <span class="value">${shoppingCount}개</span>
-      </div>
     </div>
 
     <div class="receipt-meta">

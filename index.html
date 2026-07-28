@@ -16,8 +16,7 @@
       <!-- LEFT: title + inputs -->
       <div class="left-col">
         <header class="no-print">
-          <span class="eyebrow">AI Grocery Assistant</span>
-          <h1>장보기 <em>영수증</em></h1>
+          <h1><span class="eyebrow">AI Grocery Assistant</span>장보기 <em>영수증</em></h1>
           <p class="sub">레시피 영상 링크와 냉장고 사진을 넣으면, 이미 있는 재료와 사야 할 재료를 영수증처럼 정리해드려요.</p>
         </header>
 
@@ -64,20 +63,22 @@
           </button>
         </div>
 
-        <div class="receipt-scroll" id="receiptScroll">
+        <div class="receipt-frame">
           <div class="printer-head-wrap no-print">
             <div class="printer-head"></div>
           </div>
-          <div class="printer-slot">
-            <article class="receipt" id="receiptPaper">
-              <div class="receipt-content" id="receiptContent">
-                <div class="empty-state" id="emptyState">
-                  <span class="material-symbols-outlined empty-icon">receipt_long</span>
-                  <p>왼쪽에 유튜브 URL과 재료 사진을 넣고<br/>"영수증 분석하기"를 누른 뒤<br/>"영수증 출력"을 누르면<br/>여기에 결과가 나와요.</p>
+          <div class="receipt-scroll" id="receiptScroll">
+            <div class="printer-slot">
+              <article class="receipt" id="receiptPaper">
+                <div class="receipt-content" id="receiptContent">
+                  <div class="empty-state" id="emptyState">
+                    <span class="material-symbols-outlined empty-icon">receipt_long</span>
+                    <p>왼쪽에 유튜브 URL과 재료 사진을 넣고<br/>"영수증 분석하기"를 누른 뒤<br/>"영수증 출력"을 누르면<br/>여기에 결과가 나와요.</p>
+                  </div>
                 </div>
-              </div>
-              <div class="receipt-bottom-edge"></div>
-            </article>
+                <div class="receipt-bottom-edge"></div>
+              </article>
+            </div>
           </div>
         </div>
       </section>
