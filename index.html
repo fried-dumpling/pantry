@@ -12,50 +12,52 @@
 </head>
 <body>
   <main class="page">
-    <header class="no-print">
-      <span class="eyebrow">AI Grocery Assistant</span>
-      <h1>장보기 <em>영수증</em></h1>
-      <p class="sub">레시피 영상 링크와 냉장고 사진을 넣으면, 이미 있는 재료와 사야 할 재료를 영수증처럼 정리해드려요.</p>
-    </header>
-
     <div class="layout">
-      <!-- LEFT: inputs -->
-      <section class="panel-left no-print">
-        <div class="card">
-          <div class="card-head">
-            <span class="num">1</span>
-            <label class="field-label">Recipe URL</label>
-          </div>
-          <div class="input-pill">
-            <input type="text" id="ytUrl" placeholder="https://youtube.com/..." />
-          </div>
-        </div>
+      <!-- LEFT: title + inputs -->
+      <div class="left-col">
+        <header class="no-print">
+          <span class="eyebrow">AI Grocery Assistant</span>
+          <h1>장보기 <em>영수증</em></h1>
+          <p class="sub">레시피 영상 링크와 냉장고 사진을 넣으면, 이미 있는 재료와 사야 할 재료를 영수증처럼 정리해드려요.</p>
+        </header>
 
-        <div class="card">
-          <div class="card-head">
-            <span class="num">2</span>
-            <label class="field-label">Inventory Images</label>
+        <section class="panel-left no-print">
+          <div class="card">
+            <div class="card-head">
+              <span class="num">1</span>
+              <label class="field-label">Recipe URL</label>
+            </div>
+            <div class="input-pill">
+              <input type="text" id="ytUrl" placeholder="https://youtube.com/..." />
+            </div>
           </div>
-          <label class="drop" id="dropZone">
-            <input type="file" id="fileInput" accept="image/*" multiple />
-            <span class="material-symbols-outlined drop-icon">photo_camera</span>
-            <p class="drop-label">냉장고나 식재료 사진을 드래그 하세요</p>
-          </label>
-          <div class="preview" id="preview"></div>
-          <p class="preview-count" id="previewCount"></p>
-        </div>
 
-        <div class="cta-block">
-          <button class="go" id="goBtn">영수증 출력하기</button>
-          <p class="status" id="statusMsg">Gemini로 분석됨 · 결과는 참고용이며 실제 재료 상태와 다를 수 있어요</p>
-        </div>
-      </section>
+          <div class="card">
+            <div class="card-head">
+              <span class="num">2</span>
+              <label class="field-label">Inventory Images</label>
+            </div>
+            <label class="drop" id="dropZone">
+              <input type="file" id="fileInput" accept="image/*" multiple />
+              <span class="material-symbols-outlined drop-icon">photo_camera</span>
+              <p class="drop-label">냉장고나 식재료 사진을 드래그 하세요</p>
+            </label>
+            <div class="preview" id="preview"></div>
+            <p class="preview-count" id="previewCount"></p>
+          </div>
+
+          <div class="cta-block">
+            <button class="go" id="goBtn">영수증 분석하기</button>
+            <p class="status" id="statusMsg">Gemini로 분석됨 · 결과는 참고용이며 실제 재료 상태와 다를 수 있어요</p>
+          </div>
+        </section>
+      </div>
 
       <!-- RIGHT: receipt -->
       <section class="panel-right">
         <div class="actions no-print">
           <button class="pill" id="printBtn" disabled>
-            <span class="material-symbols-outlined">print</span> PRINT
+            <span class="material-symbols-outlined">receipt_long</span> 영수증 출력
           </button>
           <button class="pill" id="swapBtn" disabled>
             <span class="material-symbols-outlined">swap_horiz</span> SWAP
@@ -63,13 +65,15 @@
         </div>
 
         <div class="receipt-scroll" id="receiptScroll">
+          <div class="printer-head-wrap no-print">
+            <div class="printer-head"></div>
+          </div>
           <div class="printer-slot">
-            <div class="printer-head no-print"></div>
             <article class="receipt" id="receiptPaper">
               <div class="receipt-content" id="receiptContent">
                 <div class="empty-state" id="emptyState">
                   <span class="material-symbols-outlined empty-icon">receipt_long</span>
-                  <p>왼쪽에 유튜브 URL과 재료 사진을 넣고<br/>"영수증 출력하기"를 누르면<br/>여기에 결과가 나와요.</p>
+                  <p>왼쪽에 유튜브 URL과 재료 사진을 넣고<br/>"영수증 분석하기"를 누른 뒤<br/>"영수증 출력"을 누르면<br/>여기에 결과가 나와요.</p>
                 </div>
               </div>
               <div class="receipt-bottom-edge"></div>

@@ -28,6 +28,12 @@ body{
 
 .page{ max-width:1180px; margin:0 auto; padding:40px 24px 64px; }
 
+/* Left column (title + inputs) */
+.left-col{
+    display:flex;
+    flex-direction:column;
+}
+
 /* Header */
 header{ margin-bottom:44px; }
 .eyebrow{
@@ -279,31 +285,33 @@ h1 em{ font-style:italic; font-weight:400; }
 .receipt-scroll::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px; }
 
 /* Printer / receipt */
-.printer-slot{
-    position:relative;
+.printer-head-wrap{
+    position:sticky;
+    top:0;
+    z-index:2;
     max-width:420px;
-    margin:0 auto 0 auto;
-    padding-top:12px;
+    margin:0 auto;
+    pointer-events:none;
 }
 @media (min-width:1024px){
-    .printer-slot{ margin:0 0 0 auto; }
-}
-.printer-head{
-    position:absolute;
-    top:0;
-    left:0;
-    right:0;
+    .printer-head-wrap{ margin:0 0 0 auto; }
 }
 .printer-head{
     height:12px;
     width:104%;
     margin-left:-2%;
     background:var(--ink);
-    position:absolute;
-    top:0;
     border-radius:5px 5px 0 0;
     box-shadow:0 4px 12px rgba(0,0,0,.2);
-    z-index:1;
+}
+
+.printer-slot{
+    position:relative;
+    max-width:420px;
+    margin:0 auto 0 auto;
+}
+@media (min-width:1024px){
+    .printer-slot{ margin:0 0 0 auto; }
 }
 
 .receipt{
@@ -481,7 +489,7 @@ ul.ing .owned-check{ color:var(--produce); font-size:17px; }
     body{ background:#fff !important; background-image:none !important; }
     .layout{ display:block; }
     .receipt-scroll{ max-height:none; overflow:visible; }
-    .printer-slot{ max-width:none; padding-top:0; }
+    .printer-slot{ max-width:none; }
     .receipt{ box-shadow:none; animation:none; }
 }
 
